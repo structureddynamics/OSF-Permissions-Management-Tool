@@ -1,0 +1,262 @@
+#!/usr/bin/php -q
+
+<?php
+
+  // Set the working directory of this script to its home directory. That way, if it is ran from elsewhere,
+  // the relative paths will follow.
+  chdir(dirname(realpath($argv[0])));
+  
+  include_once('inc/clt.php');
+  include_once('inc/listGroups.php');
+  include_once('inc/listGroupUsers.php');
+  include_once('inc/listUserGroups.php');
+  include_once('inc/listGroupPermissions.php');
+  include_once('inc/listUserPermissions.php');
+  include_once('inc/createGroup.php');
+  include_once('inc/deleteGroup.php');
+  include_once('inc/registerUser.php');
+  include_once('inc/unregisterUser.php');
+  include_once('inc/createAccess.php');
+  include_once('inc/deleteSpecificAccess.php');
+  include_once('inc/deleteAllAccess.php');
+
+  /*
+                                                  
+    The Permissions Management Tool is used to manage the groups, users and permissions
+    of an Open Semantic Framework instance.
+  
+  */
+
+  if(PHP_SAPI != 'cli')
+  {
+    die('This is a shell application, so make sure to run this application in your terminal.');
+  }  
+  
+  // Get commandline options
+  $arguments = getopt('h::', array('help::',
+                                   'osf-web-services::',
+                                   'osf-web-services-query-extension',
+                                   'list-groups::',
+                                   'list-group-users::',
+                                   'list-user-groups::',
+                                   'list-group-permissions::',
+                                   'list-user-permissions::',
+                                   'create-group::',
+                                   'delete-group::',
+                                   'register-user::',
+                                   'unregister-user::',
+                                   'register-user-group::',
+                                   'create-access::',
+                                   'access-dataset::',
+                                   'access-group::',
+                                   'access-perm-create::',
+                                   'access-perm-read::',
+                                   'access-perm-update::',
+                                   'access-perm-delete::',
+                                   'access-all-ws::',
+                                   'access-ws::',
+                                   'delete-access::',
+                                   'delete-dataset-accesses::'));  
+  
+  // Displaying DSF's help screen if required
+  if(isset($arguments['h']) || isset($arguments['help']) || count($arguments) == 0)
+  {
+    cecho("Usage: pmt [OPTIONS]\n\n\n", 'WHITE');
+    cecho("{underscore}Usage examples{/underscore}: \n", 'WHITE');
+    cecho("    List all existing groups: {cyan}pmt --list-groups{/cyan}\n", 'WHITE');
+    cecho("    List all users of a group: {cyan}pmt --list-group-users{/cyan}\n", 'WHITE');
+    cecho("    List all permissions of a group: {cyan}pmt --list-group-permissions{/cyan}\n", 'WHITE');
+    cecho("    List all permissions of a user: {cyan}pmt --list-user-permissions{/cyan}\n", 'WHITE');
+    cecho("    List all groups of a user: {cyan}pmt --list-user-groups{/cyan}\n", 'WHITE');
+    cecho("    Create a new group: {cyan}pmt --create-group{/cyan}\n", 'WHITE');
+    cecho("    Delete a group: {cyan}pmt --delete-group{/cyan}\n", 'WHITE');
+    cecho("    Register a user to a group: {cyan}pmt --register-user{/cyan}\n", 'WHITE');
+    cecho("    Unregister a user from a group: {cyan}pmt --unregister-user{/cyan}\n", 'WHITE');
+    cecho("    Create a new access for a group: {cyan}pmt --create-access{/cyan}\n", 'WHITE');
+    cecho("    Delete an access record: {cyan}pmt --delete-access{/cyan}\n\n", 'WHITE');
+    cecho("    Delete all accesses records of a dataset: {cyan}pmt --delete-dataset-accesses{/cyan}\n\n", 'WHITE');
+
+    cecho("{underscore}Options{/underscore}:\n", 'WHITE');
+    cecho("-h, --help                                Show this help section\n\n", 'WHITE');
+
+    cecho("{underscore}Listing Options{/underscore}:\n", 'WHITE');
+    cecho("--list-groups                             List all groups from all application IDs\n", 'WHITE');
+    cecho("--list-group-users=\"[GROUP-URI]\"          List all users registered to a group\n", 'WHITE');
+    cecho("                                          If the URI is omited, then a list of groups will be displayed\n", 'WHITE');
+    cecho("--list-group-permissions=\"[GROUP-URI]\"    List all permissions of a group of users\n", 'WHITE');
+    cecho("                                          If the URI is omited, then a list of groups will be displayed\n", 'WHITE');
+    cecho("--list-user-permissions=\"[USER-URI]\"      List all permissions of a user\n", 'WHITE');
+    cecho("                                          The URI is required\n", 'WHITE');
+    cecho("--list-user-groups=\"[USER-URI]\"           List all groups where the user is a member of\n", 'WHITE');
+    cecho("                                          The URI is required\n\n", 'WHITE');
+
+    cecho("{underscore}Groups Management Options{/underscore}:\n", 'WHITE');
+    cecho("--create-group=\"[GROUP-URI]\"              Create a new group\n", 'WHITE');
+    cecho("                                          If the URI is omited, then the user will have to provide it at the commandline\n", 'WHITE');
+    cecho("--app-id=\"[ID]\"                (optional) Specifies an application ID where to create the group\n", 'WHITE');
+    cecho("                                          If the ID is omited, then the user will have to provide it at the commandline\n", 'WHITE');
+    cecho("--delete-group=\"[GROUP-URI]\"              Delete a group (and remove all users registrations to it)\n", 'WHITE');
+    cecho("                                          If the URI is omited, then a list of groups will be displayed\n\n", 'WHITE');
+
+    cecho("{underscore}Users Management Options{/underscore}:\n", 'WHITE');
+    cecho("--register-user=\"[USER-URI]\"              Register a user to a group\n", 'WHITE');
+    cecho("                                          If the URI is omited, then the user will have to provide it at the commandline\n", 'WHITE');
+    cecho("--unregister-user=\"[USER-URI]\"            Register a user to a group\n", 'WHITE');
+    cecho("                                          If the URI is omited, then a list of groups will be displayed\n", 'WHITE');
+    cecho("--register-user-group=\"[GROUP-URI]\"       Specify the group URI where to register/unregister a user\n\n", 'WHITE');
+
+    cecho("{underscore}Accesses Management Options{/underscore}:\n", 'WHITE');
+    cecho("--create-access                           Create a new permissions access record related to a dataset and a group\n", 'WHITE');
+    cecho("--delete-access=\"[URI]\"                   Delete a permissions access record related to a dataset and a group\n", 'WHITE');
+    cecho("                                          If the URI is omited, then a list of available access records will be displayed\n", 'WHITE');
+    cecho("--delete-dataset-accesses                 Delete all the access permissions of a dataset (all groups)\n", 'WHITE');
+    cecho("                                          If the --access-dataset parameter is omited, then a list of datasets will be displayed\n", 'WHITE');
+    cecho("--access-dataset=\"[URI]\"       (optional) Specify the dataset URI involved in an access management operation\n", 'WHITE');
+    cecho("--access-group=\"[URI]\"         (optional) Specify the group URI involved in an access management operation\n", 'WHITE');
+    cecho("--access-perm-create=\"[BOOL]\"  (optional) Specify if the Create permissions is granted'\n", 'WHITE');    
+    cecho("--access-perm-read=\"[BOOL]\"    (optional) Specify if the Read permissions is granted'\n", 'WHITE');    
+    cecho("--access-perm-update=\"[BOOL]\"  (optional) Specify if the Update permissions is granted'\n", 'WHITE');    
+    cecho("--access-perm-delete=\"[BOOL]\"  (optional) Specify if the Delete permissions is granted'\n", 'WHITE');    
+    cecho("--access-all-ws                (optional) Specify that we want to use all the registered WS when creating the access record\n", 'WHITE');
+    cecho("--access-ws=\"[WS-URIs]\"        (optional) A list of web service endpoints URIs, seperated by semi-colon ';'\n", 'WHITE');
+    cecho("                                          used to define the new access record\n\n", 'WHITE');
+    
+    cecho("{underscore}General Options{/underscore}:\n", 'WHITE');
+    cecho("--osf-web-services=\"[URL]\"                (optional) Target OSF Web Services endpoints URL.\n", 'WHITE');
+    cecho("                                                     It uses the one defined in pmt.ini if this parameter is not defined\n", 'WHITE');
+    cecho("                                                     Example: 'http://localhost/ws/'\n", 'WHITE');
+    cecho("--osf-web-services-query-extension=\"[CLASS]\"   (optional) Query Extension Class (with its full namespace) to use for querying the OSF Web Services\n", 'WHITE');
+    cecho("                                                          Example: 'StructuredDynamics\\osf\\framework\\MYQuerierExtension'\n", 'WHITE');
+    exit;
+  }
+  
+  // Reading the confiration INI file
+  $setup = parse_ini_file(getcwd()."/pmt.ini", TRUE);  
+  $syncFilePath = getcwd()."/pmt.ini";
+
+  if(!$setup)
+  {
+    cecho('An error occured when we tried to parse the '.$syncFilePath.' file. Make sure it is parseable and try again.', 'GREEN');  
+    exit;
+  }
+  
+  
+  $osfWebServices = '';
+  
+  if(isset($arguments['osf-web-services']))
+  {
+    $osfWebServices = $arguments['osf-web-services'];
+  }
+  else
+  {
+    $osfWebServices = $setup["config"]["osfWebServicesEndpointsUrl"];
+  }
+  
+  // Create credentials array
+  $credentials = array(
+    'osf-web-services' => $osfWebServices,
+    'application-id' => $setup["credentials"]["application-id"],
+    'api-key' => $setup["credentials"]["api-key"],
+    'user' => $setup["credentials"]["user"],
+  );
+  
+  // Create the possible query class extension instance
+  $queryExtension = NULL;
+  if(isset($arguments['osf-web-services-query-extension']))  
+  {
+    $queryExtension = new $arguments['osf-web-services-query-extension'];
+  }  
+  
+  // Initiliaze needed resources to run this script
+  ini_set("display_errors", "On");
+  
+  $osfWebServicesFolder = rtrim($setup["config"]["osfWebServicesFolder"], "/");
+  
+  include_once($osfWebServicesFolder."/StructuredDynamics/SplClassLoader.php");   
+
+  if(isset($arguments['list-groups']))
+  {
+    $groupsByAppID = listGroups($credentials, $queryExtension);
+    
+    showGroups($groupsByAppID);
+  }
+
+  if(isset($arguments['list-group-users']))
+  {
+    $users = listGroupUsers($arguments['list-group-users'], $credentials, $queryExtension);
+    
+    showGroupUsers($users);
+  }
+
+  if(isset($arguments['list-user-groups']))
+  {
+    $groups = listUserGroups($arguments['list-user-groups'], $credentials, $queryExtension);
+    
+    showUserGroups($groups);
+  }
+
+  if(isset($arguments['list-group-permissions']))
+  {
+    $permissions = listGroupPermissions($arguments['list-group-permissions'], $credentials, $queryExtension);
+    
+    showGroupPermissions($permissions);
+  }  
+
+  if(isset($arguments['list-user-permissions']))
+  {
+    if(empty($arguments['list-user-permissions']))
+    {
+      cecho('A user URI is required to get the list of permissions of a user', YELLOW);
+    }
+    else
+    {
+      $permissions = listUserPermissions($arguments['list-user-permissions'], $credentials, $queryExtension);
+      
+      showUserPermissions($permissions);
+    }
+  }  
+  
+  if(isset($arguments['create-group']))
+  {
+    createGroup($arguments['create-group'], @$arguments['appid'], $credentials, $queryExtension);
+  }  
+  
+  if(isset($arguments['delete-group']))
+  {
+    deleteGroup($arguments['delete-group'], $credentials, $queryExtension);
+  }  
+  
+  if(isset($arguments['register-user']))
+  {
+    registerUser($arguments['register-user'], @$arguments['register-user-group'], $credentials, $queryExtension);
+  }  
+  
+  if(isset($arguments['unregister-user']))
+  {
+    unregisterUser($arguments['unregister-user'], @$arguments['register-user-group'], $credentials, $queryExtension);
+  }  
+  
+  if(isset($arguments['create-access']))
+  {
+    createAccess(@$arguments['access-dataset'], 
+                 @$arguments['access-group'],
+                 (isset($arguments['access-perm-create']) ? array(
+                   filter_var(@$arguments['access-perm-create'], FILTER_VALIDATE_BOOLEAN),
+                   filter_var(@$arguments['access-perm-read'], FILTER_VALIDATE_BOOLEAN),
+                   filter_var(@$arguments['access-perm-update'], FILTER_VALIDATE_BOOLEAN),
+                   filter_var(@$arguments['access-perm-delete'], FILTER_VALIDATE_BOOLEAN),
+                  ) : ''),
+                 (isset($arguments['access-all-ws']) ? 'all' : @$arguments['access-ws']),
+                 $credentials, $queryExtension);
+  }  
+  
+  if(isset($arguments['delete-access']))
+  {
+    deleteSpecificAccess($arguments['delete-access'], $credentials, $queryExtension);
+  }
+  
+  if(isset($arguments['delete-dataset-accesses']))
+  {
+    deleteAllAccess(@$arguments['access-dataset'], $credentials, $queryExtension);
+  }
+?>
