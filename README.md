@@ -4,7 +4,7 @@ OSF-Permissions-Management-Tool
 The Permissions Management Tool (PMT) is a command line tool used to manage access permissions on a OSF Web Services network instance. To list, create and delete access permissions, groups and users.
 
 
-Installing & Configuring the Ontologies Management Tool
+Installing & Configuring the Permissions Management Tool
 -----------------------------------------------------
 
 The Permissions Management Tool can easily be installed on your server using the [OSF-Installer](https://github.com/structureddynamics/Open-Semantic-Framework-Installer):
