@@ -11,13 +11,13 @@
     
     if(empty($appID))
     {
-      $applicationID = getInput("What is the Application ID where you want to create that group?");
+      $appID = getInput("What is the Application ID where you want to create that group?");
     }
     
     $authRegistrarGroup = new AuthRegistrarGroupQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
 
     $authRegistrarGroup->group($groupURI)
-                       ->application($applicationID)
+                       ->application($appID)
                        ->createGroup()
                        ->mime('resultset')
                        ->send($queryExtension);

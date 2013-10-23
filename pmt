@@ -47,6 +47,7 @@
                                    'unregister-user::',
                                    'register-user-group::',
                                    'create-access::',
+                                   'app-id::',
                                    'access-dataset::',
                                    'access-group::',
                                    'access-perm-create::',
@@ -218,7 +219,7 @@
   
   if(isset($arguments['create-group']))
   {
-    createGroup($arguments['create-group'], @$arguments['appid'], $credentials, $queryExtension);
+    createGroup($arguments['create-group'], @$arguments['app-id'], $credentials, $queryExtension);
   }  
   
   if(isset($arguments['delete-group']))
