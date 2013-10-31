@@ -18,7 +18,8 @@
   include_once('inc/unregisterUser.php');
   include_once('inc/createAccess.php');
   include_once('inc/deleteSpecificAccess.php');
-  include_once('inc/deleteAllAccess.php');
+  include_once('inc/deleteDatasetAccesses.php');
+  include_once('inc/deleteGroupAccesses.php');
 
   /*
                                                   
@@ -57,7 +58,8 @@
                                    'access-all-ws::',
                                    'access-ws::',
                                    'delete-access::',
-                                   'delete-dataset-accesses::'));  
+                                   'delete-dataset-accesses::',
+                                   'delete-group-accesses::'));  
   
   // Displaying DSF's help screen if required
   if(isset($arguments['h']) || isset($arguments['help']) || count($arguments) == 0)
@@ -112,6 +114,8 @@
     cecho("                                          If the URI is omited, then a list of available access records will be displayed\n", 'WHITE');
     cecho("--delete-dataset-accesses                 Delete all the access permissions of a dataset (all groups)\n", 'WHITE');
     cecho("                                          If the --access-dataset parameter is omited, then a list of datasets will be displayed\n", 'WHITE');
+    cecho("--delete-group-accesses                   Delete all the access permissions of a group (all datasets)\n", 'WHITE');
+    cecho("                                          If the --access-group parameter is omited, then a list of datasets will be displayed\n", 'WHITE');
     cecho("--access-dataset=\"[URI]\"       (optional) Specify the dataset URI involved in an access management operation\n", 'WHITE');
     cecho("--access-group=\"[URI]\"         (optional) Specify the group URI involved in an access management operation\n", 'WHITE');
     cecho("--access-perm-create=\"[BOOL]\"  (optional) Specify if the Create permissions is granted'\n", 'WHITE');    
@@ -258,6 +262,11 @@
   
   if(isset($arguments['delete-dataset-accesses']))
   {
-    deleteAllAccess(@$arguments['access-dataset'], $credentials, $queryExtension);
+    deleteDatasetAccesses(@$arguments['access-dataset'], $credentials, $queryExtension);
+  }
+  
+  if(isset($arguments['delete-group-accesses']))
+  {
+    deleteGroupAccesses(@$arguments['access-group'], $credentials, $queryExtension);
   }
 ?>

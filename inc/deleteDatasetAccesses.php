@@ -4,7 +4,7 @@
   
   include_once("getDatasets.php");
   
-  function deleteAllAccess($datasetURI, $credentials, $queryExtension = NULL) 
+  function deleteDatasetAccesses($datasetURI, $credentials, $queryExtension = NULL) 
   {
     if(empty($datasetURI))
     {
@@ -40,7 +40,17 @@
           break;
         }
       }
-      
+    }
+
+    $yes = getInput('Are you sure you want to delete accesses of the "'.$datasetURI.'" dataset?', TRUE);
+    
+    if($yes === NULL)
+    {
+      $yes = FALSE;
+    }      
+    
+    if($yes)
+    {          
       $authRegistrarAccess = new AuthRegistrarAccessQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
       
       $authRegistrarAccess->deleteAll($datasetURI)
@@ -61,8 +71,8 @@
              $authRegistrarAccess->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
         
         exit(1);
-      }      
-    }
+      } 
+    }     
     
     exit(10);
   }
